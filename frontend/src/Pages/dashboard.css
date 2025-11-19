@@ -1,0 +1,39 @@
+.dash-wrap {
+  padding: 30px;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+.dash-box {
+  max-width: 900px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+.dash-box h1 {
+  margin-top: 0;
+}
+.events-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.events-table th,
+.events-table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+.dash-actions {
+  margin-top: 18px;
+}
+.dash-actions button {
+  padding: 10px 14px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
