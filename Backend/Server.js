@@ -1,14 +1,16 @@
 const express = require("express");
+const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
-import authroutes from './routes/auth';
+const authroutes = require('./routes/auth');
 const app = express();
+app.use(cors());
 const prisma = new PrismaClient();
 require('dotenv').config();
 app.use(express.json());
 app.use('/api/auth',authroutes);
 // Test route
 app.get("/", (req, res) => {
-  res.json({ message: "API is running..." });
+  res.send( "Suspicous login backend running" );
 });
 
 // Start Server + Check DB

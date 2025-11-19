@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -13,51 +7,66 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id String @id @default(uuid())
-  email String  @unique
-  name String?
-  createdAt DateTime @default(now())
-  loginEvents LoginEvent[]  // one to many 
-  auditLogs AuditLog[] 
+  id          String        @id @default(uuid())
+  email       String        @unique
+  name        String?
+  username    String?
+  password    String
+  createdAt   DateTime      @default(now())
 
+  loginEvents LoginEvent[]
+  auditLogs   AuditLog[]
 }
+
 model LoginEvent {
-  id String  @id @default(uuid())
-  userId String 
-  ipAddress String 
-  location String?
-  device String?
- loginTime DateTime  @default(now())
-  status String
-   user User @relation(fields:[userId],references:[id])
- riskScores RiskScore[]
-  securityActions SecurityAction[]
-  auditLogs AuditLog[]
+  id          String      @id @default(uuid())
+  userId      String
+  ipAddress   String
+  country     String?
+  city        String?
+  device      String?
+  loginTime   DateTime    @default(now())
+  status      String      @default("SUCCESS")
 
+  user        User        @relation(fields: [userId], references: [id])
+  riskScore   RiskScore?
+  securityActions SecurityAction[]
+  auditLogs   AuditLog[]
+
+  @@index([userId])
+  @@index([loginTime])
+  @@index([ipAddress])
 }
+
 model RiskScore {
-  id String    @id @default(uuid())
-  loginEventId String 
-  score Int
-  reason String 
- createdAt   DateTime @default(now())
-  loginEvent LoginEvent @relation(fields:  [loginEventId],references: [id])
+  id            String       @id @default(uuid())
+  loginEventId  String       @unique
+  score         Int
+  reason        String
+  createdAt     DateTime     @default(now())
+
+  loginEvent    LoginEvent   @relation(fields: [loginEventId], references: [id])
 }
+
 model SecurityAction {
-  id  String @id @default(uuid())
-  loginEventId String 
-  actionType String 
-  details String?
-  createdAt DateTime @default(now())
-  loginEvent LoginEvent  @relation(fields:  [loginEventId],references: [id])
+  id            String       @id @default(uuid())
+  loginEventId  String
+  actionType    String       @default("NONE")
+  details       String?
+  createdAt     DateTime     @default(now())
+
+  loginEvent    LoginEvent   @relation(fields: [loginEventId], references: [id])
 }
+
 model AuditLog {
-  id String @id @default(uuid())
-  userId String?
-  loginEventId String?
-  action String 
-  createdAt DateTime @default(now())
-  user User? @relation(fields: [userId],references:[id])
-  loginEvent LoginEvent?  @relation(fields: [loginEventId], references: [id])
+  id            String       @id @default(uuid())
+  userId        String?
+  loginEventId  String?
+  action        String       @default("UNKNOWN")
+  createdAt     DateTime     @default(now())
+
+  user          User?        @relation(fields: [userId], references: [id])
+  loginEvent    LoginEvent?  @relation(fields: [loginEventId], references: [id])
 }

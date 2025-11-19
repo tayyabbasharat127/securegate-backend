@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000/api/auth";
+const API_BASE = "http://localhost:3000/api/auth";
 export async function registerApi(payload) {
 const res = await fetch(`${API_BASE}/register`, {
 method: "POST",

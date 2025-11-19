@@ -1,115 +1,124 @@
-import React, { useEffect, useState } from "react";
-import "../Pages/dashboard.css";
-import { meApi } from "../api/auth";
+import { useEffect, useState } from "react";
+import "./dashboard.css";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
-  const [events, setEvents] = useState([]);
-  const [msg, setMsg] = useState("");
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    const load = async () => {
+    const fetchHistory = async () => {
       const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
       try {
-        const res = await meApi(token);
+        const res = await fetch("http://localhost:3000/api/auth/history", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
-        if (res.ok) setUser(data);
-        else {
-          setMsg("Session expired");
-          localStorage.removeItem("token");
-          setTimeout(() => (window.location.href = "/login"), 1300);
-        }
-
-        // fetch login events (optional endpoint)
-        try {
-          const ev = await fetch(
-            "http://localhost:4000/api/login-events/user/" +
-              (data?.id || data?.userId),
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (ev.ok) {
-            const evdata = await ev.json();
-            setEvents(evdata.events || evdata);
-          }
-        } catch (e) {
-          /* ignore if endpoint not present */
-        }
+        setLogs(data);
       } catch (err) {
-        setMsg("Server error");
         console.error(err);
       }
     };
-    load();
+    fetchHistory();
   }, []);
 
-  if (msg)
-    return (
-      <div className="dash-wrap">
-        <p>{msg}</p>
-      </div>
-    );
-  if (!user)
-    return (
-      <div className="dash-wrap">
-        <p>Loading...</p>
-      </div>
-    );
+  const riskBadge = (score) => {
+    if (score > 60)
+      return <span className="badge badge-red">High</span>;
+    if (score > 20)
+      return <span className="badge badge-yellow">Suspicious</span>;
+    return <span className="badge badge-green">Safe</span>;
+  };
 
   return (
-    <div className="dash-wrap">
-      <div className="dash-box">
-        <h1>Welcome, {user.name || user.username}</h1>
-        <p>
-          <strong>Email:</strong> {user.email}
-        </p>
-        <p>
-          <strong>Joined:</strong> {new Date(user.createdAt).toLocaleString()}
-        </p>
+    <div className="dashboard-wrapper">
 
-        <h3>Recent Login Events</h3>
-        {events.length === 0 && <p>No events found.</p>}
-        {events.length > 0 && (
-          <table className="events-table">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <h2 className="logo">SecureLogin</h2>
+        <ul>
+          <li className="active">Dashboard</li>
+       
+          <li
+            onClick={() => {
+              localStorage.removeItem("token");
+              window.location.href = "/";
+            }}
+          >
+            Logout
+          </li>
+        </ul>
+      </aside>
+
+      {/* Main Content */}
+      <main className="content">
+
+        <header className="topbar">
+          <h1>Dashboard</h1>
+        </header>
+
+        {/* Summary Section */}
+        <div className="summary-container">
+          <div className="summary-card">
+            <h3>Total Logins</h3>
+            <p>{logs.length}</p>
+          </div>
+
+          <div className="summary-card">
+            <h3>Suspicious</h3>
+            <p>{logs.filter((x) => x.riskScore > 20).length}</p>
+          </div>
+
+          <div className="summary-card">
+            <h3>High Risk</h3>
+            <p>{logs.filter((x) => x.riskScore > 60).length}</p>
+          </div>
+
+          <div className="summary-card">
+            <h3>Last Login</h3>
+            <p>
+              {logs[0]
+                ? new Date(logs[0].loginTime).toLocaleString()
+                : "None"}
+            </p>
+          </div>
+        </div>
+
+        {/* Login History Table */}
+        <h2 className="section-title">Login History</h2>
+
+        <div className="table-wrapper">
+          <table className="history-table">
             <thead>
               <tr>
-                <th>Time</th>
+                <th>Date</th>
                 <th>IP</th>
                 <th>Country</th>
                 <th>Device</th>
-                <th>Risk</th>
                 <th>Status</th>
+                <th>Risk</th>
+                <th>Reason</th>
               </tr>
             </thead>
+
             <tbody>
-              {events.map((ev) => (
-                <tr key={ev.id}>
-                  <td>{new Date(ev.loginTime).toLocaleString()}</td>
-                  <td>{ev.ipAddress}</td>
-                  <td>{ev.location}</td>
-                  <td>{ev.device}</td>
-                  <td>{ev.riskScore?.score ?? "-"}</td>
-                  <td>{ev.status}</td>
+              {logs.map((log, i) => (
+                <tr
+                  key={i}
+                  className={log.riskScore > 20 ? "risk-row" : ""}
+                >
+                  <td>{new Date(log.loginTime).toLocaleString()}</td>
+                  <td>{log.ipAddress}</td>
+                  <td>{log.country || "Unknown"}</td>
+                  <td className="device-text">{log.device}</td>
+                  <td>{log.status}</td>
+                  <td>{riskBadge(log.riskScore)}</td>
+                  <td>{log.reason || "None"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-
-        <div className="dash-actions">
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/login";
-            }}
-          >
-            Logout
-          </button>
         </div>
-      </div>
+
+      </main>
     </div>
   );
 }
